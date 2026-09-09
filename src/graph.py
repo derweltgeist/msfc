@@ -10,7 +10,7 @@ from matplotlib.patches import Patch
 from src.get import get
 from src.error import InvalidCLIArgument
 
-def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, range: dict[str, str]):
+def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, cum: bool, range: dict[str, str]):
     rows: list[sqlite3.Row] = get(range, verbose)
     values: list[float] = []
     admin:  list[float] = []
@@ -18,12 +18,31 @@ def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, range: dict
     fig, ax = plt.subplots(figsize=(10, 5), num="My Shitty Finance Calculator")
     # 2. Fix the Y-Axis: Convert scientific notation (1e6) into clean Rupiah formatting
     def rupiah_formatter(x: float, pos):
-        if x >= 1e6 or x <= -1e6:
-            return f"Rp{x*1e-6:.1f}jt"  # e.g., Rp1.0jt for millions
+        if x >= 1e12 or x <= -1e12:
+            if x>= 1e12:
+                return f"Rp{x*1e-6:.1f} T"  # e.g., Rp1.0jt for millions
+            elif x <= -1e12:
+                return f"(Rp{x*1e-6:.1f} T)"  # e.g., Rp1.0jt for millions
+        elif x >= 1e9 or x <= -1e9:
+            if x>= 1e9:
+                return f"Rp{x*1e-6:.1f} B"  # e.g., Rp1.0jt for millions
+            elif x <= -1e9:
+                return f"(Rp{x*1e-6:.1f} B)"  # e.g., Rp1.0jt for millions
+        elif x >= 1e6 or x <= -1e6:
+            if x>= 1e6:
+                return f"Rp{x*1e-6:.1f} M"  # e.g., Rp1.0jt for millions
+            elif x <= -1e6:
+                return f"(Rp{x*1e-6:.1f} M)"  # e.g., Rp1.0jt for millions
         elif x >= 1e3 or x <= -1e3:
-            return f"Rp{x*1e-3:.0f}k"   # e.g., Rp50k for thousands
+            if x >= 1e3:
+                return f"Rp{x*1e-3:.0f} K"   # e.g., Rp50k for thousands
+            elif x <= 1e3:
+                return f"(Rp{x*1e-3:.0f} K)"   # e.g., Rp50k for thousands
         else:
-            return f"Rp{x:.0f}"
+            if x >= 0:
+                return f"Rp{x:.0f}"
+            elif x <= 0:
+                return f"(Rp{x:.0f})"
     # python3 run.py graph time (i vibe coded this because i am too lazy sorry)
     if choice == "time":
         # 1. Safely accumulate totals by date so multiple transactions on the same day add up!
@@ -61,12 +80,21 @@ def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, range: dict
                 current_date += timedelta(days=1)
 
         if noadmin:
-            ax.plot(dates, values, linestyle="-", label="Nominal Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+            if cum:
+                ax.plot(dates, np.cumsum(values), linestyle="-", label="Nominal Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+            else:
+                ax.plot(dates, values, linestyle="-", label="Nominal Value", color="#2b5c8f", linewidth=1.5, markersize=3)
         else:
-            ax.plot(dates, values, linestyle="-", label="Total Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+            if cum:
+                ax.plot(dates, np.cumsum(values), linestyle="-", label="Total Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+            else:
+                ax.plot(dates, values, linestyle="-", label="Total Value", color="#2b5c8f", linewidth=1.5, markersize=3)
 
         if adminfee:
-            ax.plot(dates, admin, linestyle="-", label="Admin Fee", color="#d9534f", linewidth=1.5, markersize=3)
+            if cum:
+                 ax.plot(dates, np.cumsum(admin), linestyle="-", label="Admin Fee", color="#d9534f", linewidth=1.5, markersize=3)
+            else:
+                ax.plot(dates, admin, linestyle="-", label="Admin Fee", color="#d9534f", linewidth=1.5, markersize=3)
             
         ax.yaxis.set_major_formatter(FuncFormatter(rupiah_formatter))
 

@@ -20,13 +20,13 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
     query       : str  = "" # Placeholders for queries that will be cleared constantly.
     fquery      : str  = "SELECT * FROM transactions" # This is the actual query that will be send with ? parameters.
     dquery      : str  = "SELECT * FROM transactions" # This is for showcase of the query, not actual query (which may contain parameters)
-    single      : bool = True # Check if only one flag is entered.
-    parameters  : list = []   # Parameters for SQL query, only used for other flags (time and value flags are sanitized)
+    single      : bool = True             # Check if only one flag is entered.
+    parameters  : list = []               # Parameters for SQL query, only used for other flags (time and value flags are sanitized)
     rows        : list[sqlite3.Row]  = [] # The actual result.
 
-    no_nonexempt: bool = True
+    no_nonexempt: bool = True             # Indicating that there is no non-exempt.
 
-    exempt_other : dict[str, list[str]] = {
+    exempt_other : dict[str, list[str]] = { # List of exempted queries.
         "party"    : [],
         "category" : [],
         "active"   : [],
@@ -35,7 +35,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
         "wallet"   : []
     }
 
-    if not all(v is None for v in range.values()): # If no filter flags are provided do not inject WHERE.
+    if not all(v is None for v in range.values()): # If no filter flags are provided do not inject WHERE, this is useful for select all.
         fquery += " WHERE"
         dquery += " WHERE"
 
@@ -53,7 +53,6 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
         if single: # Single being true means only one parameter is inserted.
             fquery += "         "
             dquery += "         "
-            single = False
         else: # If there has been a flag entered before, insert AND or OR
             if arg in ("date", "yearmonth", "monthday", "year", "month", "day", "nvalue", "tvalue", "admin", "id"):
                 fquery += "      OR " # This is for time and value flags
@@ -103,6 +102,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                 else:
                     exempt: bool = False
                     no_nonexempt = False
+                    single = False # Single is only set to false if we found a non-exempt entry (because if exempt it is injected later)
                 if time_rang: # If there has been a time range before, we insert OR.
                     if exempt:
                         query += " OR (date NOT BETWEEN " # If this is the first time range, do not insert OR.
@@ -224,8 +224,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                     query = "" # Reset query.
         # ======================== VALUE FLAGS
         elif arg in ("nvalue", "tvalue", "id", "admin"):
-            
-            if arg == "nvalue":
+            if arg == "nvalue": 
                 edited_arg = "value"
             elif arg == "tvalue":
                 edited_arg = "total"
@@ -240,6 +239,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                 else:
                     exempt = False
                     no_nonexempt = False
+                    single = False # Single is only set to false if we found a non-exempt entry (because if exempt it is injected later)
                 if not first_range:
                     if exempt:
                         query += "NOT ("
@@ -347,6 +347,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                 continue
             else:
                 no_nonexempt = False
+                single = False # Single is only set to false if we found a non-exempt entry (because if exempt it is injected later)
             query += f"({arg} IN ("
             dquery += f"({arg} IN ("
             query += ", ".join(["?"] * len(data)) + "))\n"

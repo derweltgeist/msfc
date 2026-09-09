@@ -203,6 +203,8 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
                                                help="Only show the summary (minus the table) at the CLI.")
         self.__subparser_control.add_argument("--show", "-show", "--s", "-s", type=str, default="total,delta,saved",
                                                help="Shows what graph. You can choose one, two, or three of total, delta, and saved (no space, seperate via comma)")
+        self.__subparser_control.add_argument("--cumulative", "-cumulative", "--cum", "-cum", action="store_true",
+                                               help="Display in a cumulative manner (only for control graph).")
 
         # python3 run.py graph [choice: time, party, category, active, passive, wallet] (flags)
         self.__subparser_graph = self.__subparser_mgr.add_parser("graph",
@@ -252,6 +254,8 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
                                                help="Do not include admin fees.")
         self.__subparser_graph.add_argument("--adminfee", "-adminfee", "--af", "-af", action="store_true",
                                                help="Show seperate graph of admin fees.")
+        self.__subparser_graph.add_argument("--cumulative", "-cumulative", "--cum", "-cum", action="store_true",
+                                               help="Display in a cumulative manner (only for graph time).")
 
         # Finalize parser.
         self.__args = self.__parser.parse_args()
@@ -301,7 +305,7 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
                 "admin"     : self.__args.admin
             })
         elif self.__OPTION == "control": # python3 run.py database
-            control(self.__args.choice, self.__args.verbose, self.__args.summary, self.__args.show, {
+            control(self.__args.choice, self.__args.verbose, self.__args.summary, self.__args.show, self.__args.cumulative, {
                 "date"      : self.__args.date,
                 "yearmonth" : self.__args.yearmonth,
                 "monthday"  : self.__args.monthday,
@@ -320,7 +324,7 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
                 "admin"     : self.__args.admin
             })
         elif self.__OPTION == "graph": # python3 run.py database
-            graph(self.__args.choice, self.__args.verbose, self.__args.noadmin, self.__args.adminfee, {
+            graph(self.__args.choice, self.__args.verbose, self.__args.noadmin, self.__args.adminfee, self.__args.cumulative, {
                 "date"      : self.__args.date,
                 "yearmonth" : self.__args.yearmonth,
                 "monthday"  : self.__args.monthday,
