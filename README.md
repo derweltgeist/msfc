@@ -29,7 +29,7 @@ Here are the commands:
 - ```control```  : Use this for budget control. This requires config key ```limit``` (that sets transaction limit per day) and ```save``` (percentage of the transaction limit you wish to save into a seperate bucket). You can execute ```control show``` to show tables of each day or ```control graph``` that shows a plot of data in respect to time. So what is the data? It includes exceed (```show``` only, it shows whether you have exceeded or not), delta (actual delta between the total spending and limit), and saved (the saved cash).
 - ```version```  : Use this to display version number. Use ```version --license``` to show what license.
 
-There are several flags you can use when executing ```database show```, ```graph```, and ```sheet export```. First, here are time flags.
+There are several flags you can use when executing ```database show```, ```control```, ```graph```, and ```sheet export```. First, here are time flags.
 - ```--date``` : Use this flag when obtaining data to filter based on dates with format ```YYYY-MM-DD:yyyy-mm-dd``` (start and end range), use comma for multiple ranges (e.g. ```YYYY-MM-DD:yyyy-mm-dd,YYYY-MM-DD:yyyy-mm-dd,YYYY-MM-DD:yyyy-mm-dd```)
 - ```--yearmonth``` : Use this flag when obtaining data to filter based on dates, but this time with format ````YYYY-MM```
 - ```--monthday```  : Use this flag when obtaining data to filter based on dates, but this time with format ```MM-DD```
