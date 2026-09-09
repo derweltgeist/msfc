@@ -118,7 +118,7 @@ def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, range: dict
         width: float = 0.35
 
         if adminfee:
-            x = np.arange(len(div))
+            x = np.arange(0, len(div))
             if noadmin:
                 ax.bar(x - width/2, values, width, label="Nominal value", color=colors)
             else:
@@ -133,7 +133,6 @@ def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, range: dict
             else:
                 ax.bar(div, values, width * 2, label="Total value", color=colors)
             plt.xticks(rotation=30, ha="right")
-                
         ax.yaxis.set_major_formatter(FuncFormatter(rupiah_formatter))
         ax.axhline(0, color="black", linewidth=0.8, linestyle="-")
         ax.set_title(f"Transactions Values by {choice.capitalize()}", fontsize=14, fontweight="bold")

@@ -56,7 +56,7 @@ def setup_db(nobackup: bool):
                             print(": Cancelling...")
                             sys.exit(0)
                         else:
-                            print(": Invalid response! Repeating... aaa")
+                            print(": Invalid response! Repeating...")
                 if not nobackup:
                     with open(db_arch, "wb") as f:
                         f.write(old_db)
@@ -72,12 +72,12 @@ def setup_db(nobackup: bool):
                     f.write(old_db)
                 break                   
         elif confirm_again.strip().lower() in ("no", "n"):
-            print(": Skipping...")
+            print(": Skipping database setup...")
             break
         else:
-            print(": Invalid response! Repeating... bbb")
+            print(": Invalid response! Repeating...")
 
-def setup(db_path: str, db_archive: str, nobackup: bool) -> None:
+def setup(db_path: str, db_archive: str, nobackup: bool, limit: float, save: float) -> None:
     '''python3 run.py setup'''
     print(": Initiating setup...")
     # Open or create TOMLDocument if the file does not exist.
@@ -88,6 +88,8 @@ def setup(db_path: str, db_archive: str, nobackup: bool) -> None:
         doc: TOMLDocument = tomlkit.document()
     doc["database"] = db_path
     doc["archive"]  = db_archive
+    doc["limit"]    = limit
+    doc["save"]     = save
     # Check if the user wishes.
     print("> Here is the config that you are about to apply:\n")
     print(tomlkit.dumps(doc).strip() + "\n")
@@ -108,10 +110,10 @@ def setup(db_path: str, db_archive: str, nobackup: bool) -> None:
                     f.write(previous)
                 break                
         elif confirm.strip().lower() in ("no", "n"):
-            print(": Skipping...")
+            print(": Skipping setup config...")
             break
         else:
-            print(": Invalid response! Repeating... ccc")
+            print(": Invalid response! Repeating...")
     # Set up database as a clean sheet if the user wants.
     setup_db(nobackup)
     print(": Finishing setup...")   

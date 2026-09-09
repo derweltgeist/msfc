@@ -224,6 +224,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                     query = "" # Reset query.
         # ======================== VALUE FLAGS
         elif arg in ("nvalue", "tvalue", "id", "admin"):
+            
             if arg == "nvalue":
                 edited_arg = "value"
             elif arg == "tvalue":
@@ -260,28 +261,30 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                     except ValueError:
                         raise InvalidValueFlagsFormat(f"Equivalence statement index {ind} of --{arg} must be x=[number]")
                     query += f"{edited_arg} = {number}"
-                elif len (equivalence) == 1: # Non-equivalence, eg 500<x<900
+                elif len(equivalence) == 1: # Non-equivalence, eg 500<x<900
                     tokens = re.split(r"(>=|<=|>|<|x)", r)
                     tokens = [item for item in tokens if item] # Purge from empty strings.
                     if len(tokens) not in (5, 3):
                         raise InvalidValueFlagsFormat(
-                            f"Non-equivalence statement index {ind} of --{arg} must be [number][non-equal-operator]x[non-equal-operator][number]")
-                    operator_facing_left: bool = False # This means literally 1000>x>500 or 1000>=x>500 or 1000>x>=500 or 1000>=x>=500 is left.
-                    has_found:            bool = False # This means the first operator that indicates facing has been found.
-                    first_number:        float = 0     # First number.
-                    second_number:       float = 0     # Second number
-                    first_number_modifie: bool = False # Indicating first number has been found, so the program stores the num token to the 2nd.
-                    second_number_modifi: bool = False
+                            f"Non-equivalence statement index {ind} of --{arg} must be [number][operator]x[operator][number], [number]x[operator], or [operator]x[number]")
+                    operator_facing_left: bool  = False # This means literally 1000>x>500 or 1000>=x>500 or 1000>x>=500 or 1000>=x>=500 is left.
+                    first_has_found:      bool  = False  # This means the first operator that indicates facing has been found.
+                    first_number:         float = 0     # First number.
+                    second_number:        float = 0     # Second number
+                    first_number_modifie: bool  = False # Indicating first number has been found, so the program stores the num token to the 2nd.
+                    second_number_modifi: bool  = False # Indicating second number has been modified.
+                    x_found:              bool  = False # Indicating x has been found.
                     for token_ind, token in enumerate(tokens):
                         if token in (">=", "<=", "<", ">"):
                             if token_ind not in (1, 3):
                                 raise InvalidValueFlagsFormat(
-                            f"Non-equivalence statement index {ind} of --{arg} must be [number][non-equal-operator]x[non-equal-operator][number]")
-                            if not has_found:
+                            f"Non-equivalence statement index {ind} of --{arg} must be [number][operator]x[operator][number], [number]x[operator], or [operator]x[number]")
+                            if not first_has_found:
                                 if token in (">", ">="):
                                     operator_facing_left = True
-                                has_found = True
-                            else:
+                                first_has_found = True
+                            else: # This is for second operator.
+                                second_has_found = True
                                 if operator_facing_left:
                                     if token in ("<", "<="):
                                         raise InvalidValueFlagsFormat(
@@ -291,11 +294,15 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                                         raise InvalidValueFlagsFormat(
                                         f"Non-equivalence statement index {ind} of --{arg} must have its operators aligned.")    
                         elif token == "x":
+                            x_found = True
                             token = f"{edited_arg} AND {edited_arg}"
                         else:
-                            if token_ind not in (0, 4):
-                                raise InvalidValueFlagsFormat(
-                            f"Non-equivalence statement index {ind} of --{arg} must be [number][non-equal-operator]x[non-equal-operator][number]")   
+                            if token_ind not in (0, 4): # Kills any numbers that are not placed in index 0 or 4
+                                if token_ind == 2 and len(tokens) == 3 and x_found: # So forms like x operator number is valid
+                                    pass
+                                else:
+                                    raise InvalidValueFlagsFormat(
+                            f"Non-equivalence statement index {ind} of --{arg} must be [number][operator]x[operator][number], [number]x[operator], or [operator]x[number]")   
                             try:
                                 token = token.replace("H", "00").replace("h", "00").replace("K", "000").replace("k", "000")
                                 numbe  = float(token)
@@ -307,7 +314,7 @@ def get(range: dict[str, str], verbose: bool, panda: str = "") -> list[sqlite3.R
                                     first_number_modifie = True
                             except ValueError:
                                 raise InvalidValueFlagsFormat(
-                            f"Non-equivalence statement index {ind} of --{arg} must be [number][non-equal-operator]x[non-equal-operator][number]")                      
+                            f"Non-equivalence statement index {ind} of --{arg} must be [number][operator]x[operator][number], [number]x[operator], or [operator]x[number]")                      
                         if token_ind == 0:
                             query += token
                         else:

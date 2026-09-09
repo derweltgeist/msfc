@@ -1,2 +1,4 @@
 database = "database.db"
 archive = "archive.db"
+limit = 50000
+save = 0.2

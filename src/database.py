@@ -106,15 +106,15 @@ def database(choice: str, verbose: bool, nobackup: bool, summary: bool, range: d
         values = [row["total"] for row in rows]
         # Sum of a specific column (e.g., 'value' or 'total')
         total_sum = sum(values)
-        print(f"Total number of rows  : {total_rows} transactions.")
-        print(f"Sum of transactions   : {rupiah(total_sum)}")
+        print(f"Total number of row(s)  : {total_rows} transactions.")
+        print(f"Sum of transaction(s)   : {rupiah(total_sum)}")
         if len(values) == 0:
-            print(f"Average transactions  : Invalid.")
-            print(f"Stdev of transactions : Invalid.")
+            print(f"Average transaction(s)  : Invalid.")
+            print(f"Stdev of transaction(s) : Invalid.")
         else:
-            print(f"Average transactions  : {rupiah(total_sum/total_rows)}")
-            print(f"Stdev of transactions : {statistics.stdev(values)}")
-        print(f"Range of transactions : {rupiah(max(values, default=0) - min(values, default=0))}")
+            print(f"Average transaction(s)  : {rupiah(total_sum/total_rows)}")
+            print(f"Stdev of transaction(s) : {statistics.stdev(values)}")
+        print(f"Range of transaction(s) : {rupiah(max(values, default=0) - min(values, default=0))}")
         print("")
         print("* Admin fees are included.")
         print("")

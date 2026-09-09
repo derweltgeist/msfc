@@ -38,3 +38,7 @@ class InvalidGetArg(Exception):
     """Used for invalid arg of get, internal."""
     pass
 
+class InvalidControlGraph(Exception):
+    """Used for invalid --graph of control graph"""
+    pass
+
