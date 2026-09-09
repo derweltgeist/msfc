@@ -26,6 +26,7 @@ Here are the commands:
 - ```database``` : Reset or obtain data from the database. Use ```database reset``` to reset, and ```database show``` to obtain data.
 - ```sheet```    : Use this to import (```sheet import```) or export (```sheet export```) to spreadsheets (the only way to mutate data).
 - ```graph```    : Display it within a graph. Use ```graph time``` to plot it against time (line graph), and ```graph [party, category, active, passive, wallet]``` to ploit against those classifications (bar chart). Use ```--noadmin``` to not include admin fees and ```--adminfee``` to show seperate graph of admin fees. If both flags are used you get a seperated graph of nominal value and admin fee.
+- ```control```  : Use this for budget control. This requires config key ```limit``` (that sets transaction limit per day) and ```save``` (percentage of the transaction limit you wish to save into a seperate bucket). You can execute ```control show``` to show tables of each day or ```control graph``` that shows a plot of data in respect to time. So what is the data? It includes exceed (```show``` only, it shows whether you have exceeded or not), delta (actual delta between the total spending and limit), and saved (the saved cash).
 - ```version```  : Use this to display version number. Use ```version --license``` to show what license.
 
 There are several flags you can use when executing ```database show```, ```graph```, and ```sheet export```. First, here are time flags.
@@ -51,10 +52,11 @@ Here are other flags. All of them are used to compare against active, passive wa
 - ```--passive```   : Use this for the passive side.
 
 There are several useful flags:
-- ```--verbose``` for ```database show```, ```graph```, and ```sheet export```, the SQL command will be displayed before you confirm.
+- ```--verbose``` for ```database show```, ```graph```, ```control```, and ```sheet export```, the SQL command will be displayed before you confirm.
 - ```--overwrite``` for ```sheet import```, the data will overwrite instead of be appended.
 - ```--nobackup``` for ```setup```, ```sheet import```, and ```database reset```, backup database will not be created.
-- ```--summary``` for ```database show``` to generate only the summary (table is not generated).
+- ```--summary``` for ```database show``` and ```control``` to generate only the summary (table is not generated).
+- ```--show``` for ```control graph``` to show what graphs can be shown (either total, delta, or saved. use commas for seperation, do not use space. You can pick two items or more)
 
 Notes:
 - The spreadsheet file must contain sheet tab named 'Mutation'.
