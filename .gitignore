@@ -224,3 +224,4 @@ __marimo__/
 *.xlsx
 *.Identifier
 /test.py
+/.direnv/
