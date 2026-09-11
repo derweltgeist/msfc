@@ -2,47 +2,40 @@ from datetime import datetime, timedelta
 
 import sqlite3
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import matplotlib.dates as mdates
 from matplotlib.ticker import FuncFormatter
 from matplotlib.patches import Patch
+import mplfinance as mpf
 
 from src.get import get
 from src.error import InvalidCLIArgument
 
-def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, cum: bool, range: dict[str, str]):
+def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, cum: bool, candle: bool, range: dict[str, str]):
     rows: list[sqlite3.Row] = get(range, verbose)
     values: list[float] = []
     admin:  list[float] = []
     print(": Plotting graph, please wait...")
     fig, ax = plt.subplots(figsize=(10, 5), num="My Shitty Finance Calculator")
     # 2. Fix the Y-Axis: Convert scientific notation (1e6) into clean Rupiah formatting
-    def rupiah_formatter(x: float, pos):
-        if x >= 1e12 or x <= -1e12:
-            if x>= 1e12:
-                return f"Rp{x*1e-6:.1f} T"  # e.g., Rp1.0jt for millions
-            elif x <= -1e12:
-                return f"(Rp{x*1e-6:.1f} T)"  # e.g., Rp1.0jt for millions
-        elif x >= 1e9 or x <= -1e9:
-            if x>= 1e9:
-                return f"Rp{x*1e-6:.1f} B"  # e.g., Rp1.0jt for millions
-            elif x <= -1e9:
-                return f"(Rp{x*1e-6:.1f} B)"  # e.g., Rp1.0jt for millions
-        elif x >= 1e6 or x <= -1e6:
-            if x>= 1e6:
-                return f"Rp{x*1e-6:.1f} M"  # e.g., Rp1.0jt for millions
-            elif x <= -1e6:
-                return f"(Rp{x*1e-6:.1f} M)"  # e.g., Rp1.0jt for millions
-        elif x >= 1e3 or x <= -1e3:
-            if x >= 1e3:
-                return f"Rp{x*1e-3:.0f} K"   # e.g., Rp50k for thousands
-            elif x <= 1e3:
-                return f"(Rp{x*1e-3:.0f} K)"   # e.g., Rp50k for thousands
+    def rupiah_formatter(x: float, pos) -> str:
+        if x == 0:
+            return "Rp0"
+        is_neg = x < 0
+        val = abs(x)
+        if val >= 1e12:
+            formatted = f"Rp{val * 1e-12:.1f} T"
+        elif val >= 1e9:
+            formatted = f"Rp{val * 1e-9:.1f} B"
+        elif val >= 1e6:
+            formatted = f"Rp{val * 1e-6:.1f} M"
+        elif val >= 1e3:
+            formatted = f"Rp{val * 1e-3:.0f} K"
         else:
-            if x >= 0:
-                return f"Rp{x:.0f}"
-            elif x <= 0:
-                return f"(Rp{x:.0f})"
+            formatted = f"Rp{val:.0f}"
+        return f"({formatted})" if is_neg else formatted
     # python3 run.py graph time (i vibe coded this because i am too lazy sorry)
     if choice == "time":
         # 1. Safely accumulate totals by date so multiple transactions on the same day add up!
@@ -79,27 +72,90 @@ def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, cum: bool, 
                     admin.append(raw_admin.get(date_str, 0))
                 current_date += timedelta(days=1)
 
-        if noadmin:
-            if cum:
-                ax.plot(dates, np.cumsum(values), linestyle="-", label="Nominal Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+        if candle:
+            # --- DYNAMIC CANDLESTICK & MULTI-LINE PLOTTING ---
+            days_span = (max(dates) - min(dates)).days if dates else 0
+            if days_span <= 30:
+                rule = "D"
+            elif days_span <= 180:
+                rule = "3D"
+            elif days_span <= 365:
+                rule = "W"
             else:
-                ax.plot(dates, values, linestyle="-", label="Nominal Value", color="#2b5c8f", linewidth=1.5, markersize=3)
-        else:
-            if cum:
-                ax.plot(dates, np.cumsum(values), linestyle="-", label="Total Value", color="#2b5c8f", linewidth=1.5, markersize=3)
-            else:
-                ax.plot(dates, values, linestyle="-", label="Total Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+                rule = "ME"
 
-        if adminfee:
+            def plot_candlestick(series_data, label_name):
+                df_temp = pd.DataFrame(
+                    {"val": series_data}, index=pd.to_datetime(dates)
+                )
+                ohlc = df_temp["val"].resample(rule).ohlc()
+                ohlc["close"] = ohlc["close"].ffill().fillna(0)
+                ohlc["open"] = ohlc["open"].fillna(ohlc["close"])
+                ohlc["high"] = ohlc["high"].fillna(ohlc["close"])
+                ohlc["low"] = ohlc["low"].fillna(ohlc["close"])
+
+                # show_nontrading=True forces real datetimes onto the x-axis!
+                mpf.plot(
+                    ohlc,
+                    type="candle",
+                    ax=ax,
+                    style="charles",
+                    show_nontrading=True
+                )
+                ax.set_title(label_name, fontsize=14, fontweight="bold")
+
+            label_text = "Nominal Value" if noadmin else "Total Value"
             if cum:
-                 ax.plot(dates, np.cumsum(admin), linestyle="-", label="Admin Fee", color="#d9534f", linewidth=1.5, markersize=3)
+                plot_candlestick(np.cumsum(values), label_text)
             else:
-                ax.plot(dates, admin, linestyle="-", label="Admin Fee", color="#d9534f", linewidth=1.5, markersize=3)
-            
+                plot_candlestick(values, label_text)
+
+            if adminfee:
+                ax.plot(
+                    dates,
+                    np.cumsum(admin) if cum else admin,
+                    linestyle="-",
+                    label="Admin Fee",
+                    color="#2b5c8f",
+                    linewidth=1.5,
+                    markersize=3,
+                )
+
+            # Manual legend setup
+            from matplotlib.artist import Artist
+            legend_elements: list[Artist] = [
+                Patch(facecolor="#2b8a3e", edgecolor="#2b8a3e", label="Positive"),
+                Patch(facecolor="#c92a2a", edgecolor="#c92a2a", label="Negative"),
+            ]
+            if adminfee:
+                legend_elements.append(
+                    Line2D([0], [0], color="#d9534f", lw=1.5, label="Admin Fee")
+                )
+
+            ax.legend(handles=legend_elements, loc="upper left")
+        else:
+            if noadmin:
+                if cum:
+                    ax.plot(dates, np.cumsum(values), linestyle="-", label="Nominal Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+                else:
+                    ax.plot(dates, values, linestyle="-", label="Nominal Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+            else:
+                if cum:
+                    ax.plot(dates, np.cumsum(values), linestyle="-", label="Total Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+                else:
+                    ax.plot(dates, values, linestyle="-", label="Total Value", color="#2b5c8f", linewidth=1.5, markersize=3)
+            if adminfee:
+                if cum:
+                     ax.plot(dates, np.cumsum(admin), linestyle="-", label="Admin Fee", color="#d9534f", linewidth=1.5, markersize=3)
+                else:
+                    ax.plot(dates, admin, linestyle="-", label="Admin Fee", color="#d9534f", linewidth=1.5, markersize=3)
+            ax.legend()
         ax.yaxis.set_major_formatter(FuncFormatter(rupiah_formatter))
 
         # 3. Add titles, labels, and grid for readability
         ax.set_title("Transaction Values Over Time", fontsize=14, fontweight="bold")
+        ax.yaxis.set_label_position("left")
+        ax.yaxis.tick_left()
         ax.set_xlabel("Date", fontsize=11)
         ax.set_ylabel("Amount (Rp)", fontsize=11)
         ax.grid(True, linestyle="--", alpha=0.6)
@@ -112,7 +168,7 @@ def graph(choice: str, verbose: bool, noadmin: bool, adminfee: bool, cum: bool, 
 
         # Automatically rotate and format date labels cleanly
         fig.autofmt_xdate()
-        ax.legend()
+
     elif choice in ("party", "category", "active", "passive", "wallet"):
         aggregated_values = {}
         aggregated_admin = {}

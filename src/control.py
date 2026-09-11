@@ -1,5 +1,6 @@
 import sys
 
+import numpy as np
 import pandas as pd
 import tomlkit
 from tomlkit.exceptions import ParseError
@@ -35,8 +36,24 @@ def control(choice: str, verbose: bool,  summary: bool, graph: str, cum: bool, r
     boundary: float = limit * (1 - save)
     df_agg["exceed"] = df_agg["total"] < - limit    # Indicates whether you have exceeded the limit.
     df_agg["saved"]  = df_agg["total"] > - boundary # Indicates whether your spending is <= boundary.
-    df_agg["delta"]  = limit + df_agg["total"]      # The actual difference.
-    df_agg["extra"] = (boundary + df_agg["total"]).clip(lower=0) # The extra money you manage to save from the cut, lower cap is 0.
+    # 1. Define conditions
+    conds = [
+        df_agg["total"] > 0,
+        df_agg["total"] < 0
+    ]
+    # 2. Define corresponding outputs for 'delta'
+    delta_choices = [
+        df_agg["total"] - limit,
+        limit - abs(df_agg["total"])
+    ]
+    # 3. Define corresponding outputs for 'extra'
+    extra_choices = [
+        df_agg["total"],
+        (df_agg["total"] - limit).clip(lower=0)
+    ]
+    # 4. Assign vectorized results (default=0 handles the 'else' case)
+    df_agg["delta"] = np.select(conds, delta_choices, default=0)
+    df_agg["extra"] = np.select(conds, extra_choices, default=0)
     if choice == "graph": # python3 run.py control graph
         var = tuple(graph.strip().split(','))
         items = set(["total", "delta", "extra"])
@@ -49,32 +66,22 @@ def control(choice: str, verbose: bool,  summary: bool, graph: str, cum: bool, r
         print(f"Total delta    : {rupiah(df_agg['delta'].sum())}")
         print(f"Total extra    : {rupiah(df_agg['extra'].sum())}")
         print("")
-        def rupiah_formatter(x: float, pos):
-            if x >= 1e12 or x <= -1e12:
-                if x>= 1e12:
-                    return f"Rp{x*1e-6:.1f} T"  # e.g., Rp1.0jt for millions
-                elif x <= -1e12:
-                    return f"(Rp{x*1e-6:.1f} T)"  # e.g., Rp1.0jt for millions
-            elif x >= 1e9 or x <= -1e9:
-                if x>= 1e9:
-                    return f"Rp{x*1e-6:.1f} B"  # e.g., Rp1.0jt for millions
-                elif x <= -1e9:
-                    return f"(Rp{x*1e-6:.1f} B)"  # e.g., Rp1.0jt for millions
-            elif x >= 1e6 or x <= -1e6:
-                if x>= 1e6:
-                    return f"Rp{x*1e-6:.1f} M"  # e.g., Rp1.0jt for millions
-                elif x <= -1e6:
-                    return f"(Rp{x*1e-6:.1f} M)"  # e.g., Rp1.0jt for millions
-            elif x >= 1e3 or x <= -1e3:
-                if x >= 1e3:
-                    return f"Rp{x*1e-3:.0f} K"   # e.g., Rp50k for thousands
-                elif x <= 1e3:
-                    return f"(Rp{x*1e-3:.0f} K)"   # e.g., Rp50k for thousands
+        def rupiah_formatter(x: float, pos) -> str:
+            if x == 0:
+                return "Rp0"
+            is_neg = x < 0
+            val = abs(x)
+            if val >= 1e12:
+                formatted = f"Rp{val * 1e-12:.1f} T"
+            elif val >= 1e9:
+                formatted = f"Rp{val * 1e-9:.1f} B"
+            elif val >= 1e6:
+                formatted = f"Rp{val * 1e-6:.1f} M"
+            elif val >= 1e3:
+                formatted = f"Rp{val * 1e-3:.0f} K"
             else:
-                if x >= 0:
-                    return f"Rp{x:.0f}"
-                elif x <= 0:
-                    return f"(Rp{x:.0f})"
+                formatted = f"Rp{val:.0f}"
+            return f"({formatted})" if is_neg else formatted
         ax = plt.subplots(figsize=(10, 5), num="My Shitty Finance Calculator")[1]
         ax.yaxis.set_major_formatter(FuncFormatter(rupiah_formatter))
         if cum:

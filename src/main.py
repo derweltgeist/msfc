@@ -258,6 +258,8 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
                                                help="Show seperate graph of admin fees.")
         self.__subparser_graph.add_argument("--cumulative", "-cumulative", "--cum", "-cum", action="store_true",
                                                help="Display in a cumulative manner.")
+        self.__subparser_graph.add_argument("--candlestick", "-candlestick", "--cs", "-cs", action="store_true",
+                                               help="Show as candlesticks.")
 
         # Finalize parser.
         self.__args = self.__parser.parse_args()
@@ -326,7 +328,8 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
                 "admin"     : self.__args.admin
             })
         elif self.__OPTION == "graph": # python3 run.py database
-            graph(self.__args.choice, self.__args.verbose, self.__args.noadmin, self.__args.adminfee, self.__args.cumulative, {
+            graph(self.__args.choice, self.__args.verbose, self.__args.noadmin, self.__args.adminfee,
+                  self.__args.cumulative, self.__args.candlestick, {
                 "date"      : self.__args.date,
                 "yearmonth" : self.__args.yearmonth,
                 "monthday"  : self.__args.monthday,
