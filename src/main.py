@@ -45,8 +45,8 @@ class Main:
             "--limit", "-l", "--l", "-limit", type=int, default=50000,
             help="Limit per day.")
         self.__subparser_setup.add_argument(
-            "--save", "-s", "--s", "-s", type=int, default=0.2,
-            help="Save how much per day.")
+            "--cut", "-c", "--c", "-c", type=int, default=0.2,
+            help="Save how much per day, defined as X of limit.")
                 
         # python3 run.py sheet [choice: import, export] [sheet_path] (flags)
         self.__subparser_sheet = self.__subparser_mgr.add_parser("sheet",
@@ -203,8 +203,8 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
                                                help="Display SQL before execution.")
         self.__subparser_control.add_argument("--summary", "-summary", "--sum", "-sum", action="store_true",
                                                help="Only show the summary (minus the table) at the CLI.")
-        self.__subparser_control.add_argument("--show", "-show", "--s", "-s", type=str, default="total,delta,cut",
-                                               help="Shows what graph. You can choose one, two, or three of total, delta, and saved (no space, seperate via comma)")
+        self.__subparser_control.add_argument("--show", "-show", "--s", "-s", type=str, default="total,delta,extra",
+                                               help="Shows what graph. You can choose one, two, or three of total, delta, and extra (no space, seperate via comma)")
         self.__subparser_control.add_argument("--cumulative", "-cumulative", "--cum", "-cum", action="store_true",
                                                help="Display in a cumulative manner.")
 
@@ -266,7 +266,7 @@ help="For export - Filter based on the value of admin fee. Use <, <=, >, >=, =, 
         '''Run the program.'''
         self.__OPTION = self.__args.command
         if self.__OPTION == "setup": # python3 run.py setup
-            setup(self.__args.db, self.__args.archive, self.__args.nobackup, self.__args.limit, self.__args.save)
+            setup(self.__args.db, self.__args.archive, self.__args.nobackup, self.__args.limit, self.__args.cut)
         elif self.__OPTION == "sheet": # python3 run.py sheet
             sheet(self.__args.choice, self.__args.sheet, self.__args.verbose,
                   self.__args.overwrite, self.__args.nobackup, {

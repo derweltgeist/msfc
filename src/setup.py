@@ -77,7 +77,7 @@ def setup_db(nobackup: bool):
         else:
             print(": Invalid response! Repeating...")
 
-def setup(db_path: str, db_archive: str, nobackup: bool, limit: float, save: float) -> None:
+def setup(db_path: str, db_archive: str, nobackup: bool, limit: float, cut: float) -> None:
     '''python3 run.py setup'''
     print(": Initiating setup...")
     # Open or create TOMLDocument if the file does not exist.
@@ -89,7 +89,7 @@ def setup(db_path: str, db_archive: str, nobackup: bool, limit: float, save: flo
     doc["database"] = db_path
     doc["archive"]  = db_archive
     doc["limit"]    = limit
-    doc["save"]     = save
+    doc["cut"]      = cut
     # Check if the user wishes.
     print("> Here is the config that you are about to apply:\n")
     print(tomlkit.dumps(doc).strip() + "\n")
@@ -97,8 +97,11 @@ def setup(db_path: str, db_archive: str, nobackup: bool, limit: float, save: flo
     while True:
         confirm: str = input("> Do you wish to setup config? Note that this will overwrite the config! (Y/N) ")
         if confirm.strip().lower() in ("yes", "y"):
-            with open("config.toml", "r", encoding="utf-8") as f:
-                previous: str = f.read()
+            try:
+                with open("config.toml", "r", encoding="utf-8") as f:
+                    previous: str = f.read()
+            except FileNotFoundError:
+                previous = ""
             try:
                 print(": Writing to the config file...")
                 with open("config.toml", "w", encoding="utf-8") as f:
