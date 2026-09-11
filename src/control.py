@@ -1,5 +1,4 @@
 import sys
-import itertools
 
 import pandas as pd
 import tomlkit
@@ -34,19 +33,21 @@ def control(choice: str, verbose: bool,  summary: bool, graph: str, cum: bool, r
     df     = pd.DataFrame([dict(row) for row in result])
     df_agg = df.groupby("date", as_index=False)["total"].sum() # We only get the negative transactions.
     boundary: float = - limit * (1 - save)
-    df_agg["exceed"] = df_agg["total"] < boundary
-    df_agg["delta"] = df_agg["total"] - boundary
-    df_agg["saved"] = (df_agg["total"] - boundary).clip(lower=0)
+    df_agg["exceed"] = df_agg["total"] < - limit    # Indicates whether you have exceeded the limit.
+    df_agg["saved"]  = df_agg["total"] > - boundary # Indicates whether your spending is <= boundary.
+    df_agg["delta"]  = df_agg["total"] - limit      # The actual difference.
+    df_agg["cut"]    = (df_agg["total"] - boundary).clip(lower=0) # The money you manage to save from the cut, lower cap is 0.
     if choice == "graph": # python3 run.py control graph
         var = tuple(graph.strip().split(','))
-        items = set(["total", "delta", "saved"])
+        items = set(["total", "exceed", "saved", "delta", "cut"])
         if not (set(var).issubset(items) and len(var) == len(set(var))):
             raise InvalidControlGraph(
-    "You can only choose any or two or three of total, delta, and saved. Make sure to include no space and seperate by comma.")
+    "You can only choose any or two or three of total, delta, and cut. Make sure to include no space and seperate by comma.")
         print("")
         print(f"Total exceeded : {df_agg['exceed'].sum()} transaction(s)")
+        print(f"Total saved    : {df_agg['saved'].sum()} transaction(s)")
         print(f"Total delta    : {rupiah(df_agg['delta'].sum())}")
-        print(f"Total saved    : {rupiah(df_agg['saved'].sum())}")
+        print(f"Total cut      : {rupiah(df_agg['cut'].sum())}")
         print("")
         def rupiah_formatter(x: float, pos):
             if x >= 1e12 or x <= -1e12:
@@ -79,7 +80,7 @@ def control(choice: str, verbose: bool,  summary: bool, graph: str, cum: bool, r
         if cum:
             df_agg['total'] = df_agg['total'].cumsum()
             df_agg['delta'] = df_agg['delta'].cumsum()
-            df_agg['saved'] = df_agg['saved'].cumsum()
+            df_agg['cut'] = df_agg['cut'].cumsum()
         # Plot total, difference (delta), and saved against date
         df_agg.plot(
             x="date",
@@ -93,12 +94,20 @@ def control(choice: str, verbose: bool,  summary: bool, graph: str, cum: bool, r
         plt.ylabel("Amount (Rp)", fontsize=11)
         plt.xticks(rotation=45, ha="right")
         plt.grid(True, linestyle="--", alpha=0.6)
-        plt.legend(["Total", "Delta", "Saved"])
+        plt.legend(["Total", "Delta", "Cut"])
         plt.tight_layout()
         plt.show()
     elif choice == "show": # python3 run.py control show
         if not summary:
             print("")
+            if cum:
+                df_agg['exceed'] = df_agg['exceed'].cumsum()
+                df_agg['saved'] = df_agg['saved'].cumsum()    
+                df_agg['total'] = df_agg['total'].cumsum()
+                df_agg['delta'] = df_agg['delta'].cumsum()
+                df_agg['cut'] = df_agg['cut'].cumsum()
+            for col in ["total", "delta", "cut"]:
+                df[col] = df[col].apply(rupiah)
             print(
                 tabulate(
                     df_agg, headers="keys", tablefmt="fancy_grid", showindex=False
@@ -106,8 +115,9 @@ def control(choice: str, verbose: bool,  summary: bool, graph: str, cum: bool, r
             )
         print("")
         print(f"Total exceeded : {df_agg['exceed'].sum()} transaction(s)")
+        print(f"Total saved    : {df_agg['saved'].sum()} transaction(s)")
         print(f"Total delta    : {rupiah(df_agg['delta'].sum())}")
-        print(f"Total saved    : {rupiah(df_agg['saved'].sum())}")
+        print(f"Total cut      : {rupiah(df_agg['cut'].sum())}")
         print("")
     else:
         raise InvalidCLIArgument(

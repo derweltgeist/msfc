@@ -1,5 +1,6 @@
 import os
 import sys
+import pandas as pd
 
 import tomlkit
 import sqlite3
@@ -89,7 +90,7 @@ def reset(nobackup: bool) -> None:
             f.write(old_db)
         sys.exit(0)
 
-def database(choice: str, verbose: bool, nobackup: bool, summary: bool, range: dict[str, str]) -> None:
+def database(choice: str, verbose: bool, nobackup: bool, summary: bool, cum: bool, range: dict[str, str]) -> None:
     '''python3 run.py database ...'''
     if choice == "reset": # python3 run.py database reset
         reset(nobackup)
@@ -98,7 +99,16 @@ def database(choice: str, verbose: bool, nobackup: bool, summary: bool, range: d
         headers = ['id', 'date', 'value', 'admin', 'total', 'party', 'category', 'active', 'passive', 'pathway', 'wallet']
         print("")
         if not summary:
-            print(tabulate(rows, headers=headers, tablefmt="fancy_grid"))
+            df = pd.DataFrame([dict(r) for r in rows])
+            if cum:
+                df["value"] = df["value"].cumsum()
+                df["admin"] = df["admin"].cumsum()
+                df["total"] = df["total"].cumsum()
+            for col in ["value", "admin", "total"]:
+                df[col] = df[col].apply(rupiah)
+                print(tabulate(df.values.tolist(), headers=headers, tablefmt="fancy_grid"))
+            else:
+                print(tabulate(df.values.tolist(), headers=headers, tablefmt="fancy_grid"))
             print("")
         # Total row count
         total_rows = len(rows)

@@ -57,7 +57,7 @@ There are several useful flags:
 - ```--nobackup``` for ```setup```, ```sheet import```, and ```database reset```, backup database will not be created.
 - ```--summary``` for ```database show``` and ```control``` to generate only the summary (table is not generated).
 - ```--show``` for ```control graph``` to show what graphs can be shown (either total, delta, or saved. use commas for seperation, do not use space. You can pick two items or more)
-- ```--cumulative``` for ```control graph``` and ```graph time``` to display graphs in a cumulative manner.
+- ```--cumulative``` for ```control```, ```database show```, and ```graph``` to display graphs and tables numbers in a cumulative manner.
 
 Notes:
 - The spreadsheet file must contain sheet tab named 'Mutation'.
