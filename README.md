@@ -58,7 +58,7 @@ There are several useful flags:
 - ```--summary``` for ```database show``` and ```control``` to generate only the summary (table is not generated).
 - ```--show``` for ```control graph``` to show what graphs can be shown (either total, delta, or saved. use commas for seperation, do not use space. You can pick two items or more)
 - ```--cumulative``` for ```control```, ```database show```, and ```graph``` to display graphs and tables numbers in a cumulative manner.
-- ```--candlestick``` for ```graph time``` to slow the nominal or total value as candlesticks.
+- ```--candlestick``` for ```graph time``` to show the nominal or total value as candlesticks.
 
 Notes:
 - The spreadsheet file must contain sheet tab named 'Mutation'.
