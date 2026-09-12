@@ -43,13 +43,13 @@ def control(choice: str, verbose: bool,  summary: bool, graph: str, cum: bool, r
     ]
     # 2. Define corresponding outputs for 'delta'
     delta_choices = [
-        df_agg["total"] - limit,
-        limit - abs(df_agg["total"])
+        df_agg["total"],
+        limit + df_agg["total"]
     ]
     # 3. Define corresponding outputs for 'extra'
     extra_choices = [
         df_agg["total"],
-        (df_agg["total"] - limit).clip(lower=0)
+        (df_agg["total"] + limit).clip(lower=0)
     ]
     # 4. Assign vectorized results (default=0 handles the 'else' case)
     df_agg["delta"] = np.select(conds, delta_choices, default=0)
