@@ -42,3 +42,6 @@ class InvalidControlGraph(Exception):
     """Used for invalid --graph of control graph"""
     pass
 
+class InvalidDatabaseRow(Exception):
+    """Used for invalid row numbers to cumulate a table."""
+

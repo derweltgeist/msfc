@@ -11,7 +11,7 @@ from tomlkit import exceptions, TOMLDocument
 
 from src.get import get
 from src.other import rupiah
-from src.error import (InvalidOrMissingConfig, InvalidCLIArgument, InvalidDatabaseError)
+from src.error import (InvalidOrMissingConfig, InvalidCLIArgument, InvalidDatabaseError, InvalidDatabaseRow)
 
 def reset(nobackup: bool) -> None:
     '''python3 run.py database reset'''
@@ -104,10 +104,12 @@ def database(choice: str, verbose: bool, nobackup: bool, summary: bool, cum: boo
                 df["value"] = df["value"].cumsum()
                 df["admin"] = df["admin"].cumsum()
                 df["total"] = df["total"].cumsum()
-            for col in ["value", "admin", "total"]:
-                df[col] = df[col].apply(rupiah)
+                for col in ["value", "admin", "total"]:
+                    df[col] = df[col].apply(rupiah)
                 print(tabulate(df.values.tolist(), headers=headers, tablefmt="fancy_grid"))
             else:
+                for col in ["value", "admin", "total"]:
+                    df[col] = df[col].apply(rupiah)
                 print(tabulate(df.values.tolist(), headers=headers, tablefmt="fancy_grid"))
             print("")
         # Total row count
@@ -123,7 +125,10 @@ def database(choice: str, verbose: bool, nobackup: bool, summary: bool, cum: boo
             print(f"Stdev of transaction(s) : Invalid.")
         else:
             print(f"Average transaction(s)  : {rupiah(total_sum/total_rows)}")
-            print(f"Stdev of transaction(s) : {statistics.stdev(values)}")
+            if len(values) == 1:            
+                print(f"Stdev of transaction(s) : Invalid")
+            else:
+                print(f"Stdev of transaction(s) : {statistics.stdev(values)}")
         print(f"Range of transaction(s) : {rupiah(max(values, default=0) - min(values, default=0))}")
         print("")
         print("* Admin fees are included.")
